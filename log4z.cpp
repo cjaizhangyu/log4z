@@ -47,6 +47,8 @@
 #include <list>
 #include <algorithm>
 #include <iostream>
+#include <fcntl.h>
+#include <linux/fadvise.h>
 
 
 #ifdef WIN32
@@ -82,7 +84,10 @@
 #endif
 #endif
 
-
+#ifdef ANDROID
+#include <android/log.h>
+#include <android/api-level.h>
+#endif
 
 _ZSUMMER_BEGIN
 _ZSUMMER_LOG4Z_BEGIN
@@ -160,8 +165,12 @@ public:
        {
           int fd = fileno(_file);
           fsync(fd);
-#ifndef ANDROID
-          posix_fadvise(fd, index, len, POSIX_FADV_DONTNEED);
+#ifdef ANDROID
+//        if(__ANDROID_API__ >= 21) {
+//               posix_fadvise(fd, index, len, POSIX_FADV_DONTNEED);
+//           }
+#else
+        posix_fadvise(fd, index, len, POSIX_FADV_DONTNEED);
 #endif
           fsync(fd);
        }
@@ -859,6 +868,17 @@ bool createRecursionDir(std::string path)
     fixPath(path);
 
     std::string::size_type pos = path.find('/');
+
+#ifdef ANDROID
+    // dir header:/storage/emulated/0/
+    for(int i = 0; i < 4; i++) {
+    	pos = path.find('/', pos+1);
+    	if(pos == std::string::npos) {
+    		return false;
+    	}
+    }
+#endif
+
     while (pos != std::string::npos)
     {
         std::string cur = path.substr(0, pos-0);
@@ -1857,6 +1877,9 @@ bool LogerManager::openLogger(LogData * pLog)
         long curLen = pLogger->_handle.open(path.c_str(), "ab");
         if (!pLogger->_handle.isOpen() || curLen < 0)
         {
+#ifdef ANDROID
+            __android_log_print(ANDROID_LOG_ERROR, "test-chen", "create %s fail", path.c_str());
+#endif
 			sprintf(buf, "log4z: can not open log file %s. \r\n", path.c_str());
             showColorText("!!!!!!!!!!!!!!!!!!!!!!!!!! \r\n", LOG_LEVEL_FATAL);
             showColorText(buf, LOG_LEVEL_FATAL);
@@ -1988,8 +2011,11 @@ void LogerManager::run()
                 OutputDebugStringA(pLog->_content);
 #endif
             }
+#ifdef ANDROID
 
+            __android_log_print(ANDROID_LOG_INFO, "test-chen", "%s", pLog->_content);
 
+#endif
             if (curLogger._outfile )
             {
                 if (!openLogger(pLog))
