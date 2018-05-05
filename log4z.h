@@ -826,7 +826,11 @@ inline Log4zStream & Log4zStream::writeDouble(double t, bool isSimple)
     {
         if ( fabst < 0.0001 || (!isSimple && fabst > 4503599627370495ULL) || (isSimple && fabst > 8388607))
         {
+#ifndef ANDROID
             gcvt(t, isSimple ? 7 : 16, _cur);
+#else
+            sprintf(_cur, "%.6f", t);
+#endif
             size_t len = strlen(_cur);
             if (len > count) len = count;
             _cur += len;

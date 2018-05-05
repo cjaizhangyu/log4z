@@ -1251,7 +1251,11 @@ LogData * LogerManager::makeLogData(LoggerId id, int level)
         pthread_threadid_np(NULL, &tid);
         pLog->_threadID = (unsigned int) tid;
 #else
+#ifndef ANDROID
         pLog->_threadID = (unsigned int)syscall(SYS_gettid);
+#else
+        pLog->_threadID = (unsigned int)syscall(gettid());
+#endif
 #endif
     }
 
