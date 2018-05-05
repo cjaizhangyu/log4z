@@ -12,4 +12,4 @@
 APP_ABI := armeabi arm64-v8a x86
 APP_STL := c++_static
 #APP_STL := stlport_static
-APP_PLATFORM := android-21
+APP_PLATFORM := android-16

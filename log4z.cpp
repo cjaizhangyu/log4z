@@ -160,7 +160,9 @@ public:
        {
           int fd = fileno(_file);
           fsync(fd);
+#ifndef ANDROID
           posix_fadvise(fd, index, len, POSIX_FADV_DONTNEED);
+#endif
           fsync(fd);
        }
 #endif
